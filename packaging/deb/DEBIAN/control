@@ -1,0 +1,32 @@
+Package: minervadb-server
+Version: 24.12.1-1
+Architecture: all
+Maintainer: MinervaDB Engineering <engineering@minervadb.xyz>
+Installed-Size: 2048
+Depends: clickhouse-server (>= 24.1), clickhouse-client (>= 24.1), curl, ca-certificates, openssl
+Recommends: clickhouse-keeper (>= 24.1)
+Section: database
+Priority: optional
+Homepage: https://github.com/MinervaDB/MinervaDB-Server
+Description: MinervaDB Server for ClickHouse -- Enterprise-grade ClickHouse distribution
+ MinervaDB Server for ClickHouse is an enterprise-grade distribution and
+ configuration overlay for ClickHouse -- the world's fastest open-source
+ real-time analytics database -- enhanced with curated extensions,
+ operational tooling, and comprehensive documentation.
+ .
+ This package installs:
+  * Production-hardened config.d / users.d XML overlays into
+    /etc/clickhouse-server/
+  * Full MinervaDB source tree under /opt/minervadb-server
+  * Helper scripts for backup, diagnostics, and upgrades
+ .
+ Coverage areas:
+  * Performance Engineering (MergeTree tuning, query optimisation, I/O)
+  * Scalability (horizontal sharding, vertical sizing, cloud-native)
+  * Observability & Monitoring (Prometheus, Grafana, OpenTelemetry)
+  * Troubleshooting (runbooks for every common failure mode)
+  * Disaster Recovery (clickhouse-backup, S3/GCS/Azure, PITR)
+  * High Availability (ClickHouse Keeper, HAProxy, rolling upgrades)
+ .
+ After installation restart ClickHouse:
+  systemctl restart clickhouse-server
