@@ -1,0 +1,23 @@
+#!/bin/sh
+# prerm script for minervadb-server
+# Called by dpkg before the package files are removed.
+set -e
+
+case "$1" in
+  remove|upgrade|deconfigure)
+    # Nothing to stop -- we do not own the clickhouse-server service.
+    # The config overlays in /etc/clickhouse-server/config.d/ and
+    # /etc/clickhouse-server/users.d/ are marked conffiles and will
+    # be handled by dpkg automatically (kept if modified).
+    ;;
+
+  failed-upgrade)
+    ;;
+
+  *)
+    echo "prerm: unexpected argument $1" >&2
+    exit 1
+    ;;
+esac
+
+exit 0
