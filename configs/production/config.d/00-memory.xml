@@ -1,0 +1,85 @@
+<?xml version="1.0"?>
+<!--
+  MinervaDB Server for ClickHouse
+  configs/production/config.d/00-memory.xml
+
+  Memory limits and cache configuration for production OLAP workloads.
+  Tune max_server_memory_usage_to_ram_ratio based on your workload:
+    - Pure ClickHouse server (dedicated):          0.90
+    - ClickHouse + Keeper on same host:            0.75
+    - Mixed workload (other services on host):     0.60
+-->
+<clickhouse>
+    <!-- ===================================================================
+         SERVER-LEVEL MEMORY LIMITS
+         =================================================================== -->
+
+    <!--
+      Maximum total memory the server process may use.
+      0 = auto-set to max_server_memory_usage_to_ram_ratio * total_RAM.
+      Recommended: leave at 0 and set the ratio below.
+    -->
+    <max_server_memory_usage>0</max_server_memory_usage>
+
+    <!--
+      Fraction of total RAM the server may use.
+      90% of RAM for a dedicated ClickHouse node.
+    -->
+    <max_server_memory_usage_to_ram_ratio>0.90</max_server_memory_usage_to_ram_ratio>
+
+    <!-- ===================================================================
+         MARK CACHE
+         Caches .mrk2 files (primary index marks).  Significantly reduces
+         I/O for repeated range scans on the same table.
+         Rule of thumb: 5-10 GB per 1 TB of hot data.
+         =================================================================== -->
+    <mark_cache_size>10737418240</mark_cache_size>  <!-- 10 GiB -->
+
+    <!-- ===================================================================
+         UNCOMPRESSED CACHE
+         Caches uncompressed column data blocks.  Beneficial for dashboards
+         and repeated short-range queries.  Set to 0 to disable when you
+         prefer OS page-cache utilisation instead.
+         =================================================================== -->
+    <uncompressed_cache_size>8589934592</uncompressed_cache_size>  <!-- 8 GiB -->
+
+    <!-- ===================================================================
+         INDEX MARK CACHE (ClickHouse 23.4+)
+         =================================================================== -->
+    <index_mark_cache_size>1073741824</index_mark_cache_size>  <!-- 1 GiB -->
+
+    <!-- ===================================================================
+         COMPILED EXPRESSIONS CACHE
+         Caches JIT-compiled expression trees.
+         =================================================================== -->
+    <compiled_expression_cache_size>134217728</compiled_expression_cache_size>  <!-- 128 MiB -->
+    <compiled_expression_cache_elements_size>10000</compiled_expression_cache_elements_size>
+
+    <!-- ===================================================================
+         QUERY CACHE (ClickHouse 23.5+)
+         TTL-based result cache for repeatable queries.
+         =================================================================== -->
+    <query_cache>
+        <max_size_in_bytes>1073741824</max_size_in_bytes>  <!-- 1 GiB -->
+        <max_entries>1024</max_entries>
+        <max_entry_size_in_bytes>10485760</max_entry_size_in_bytes>  <!-- 10 MiB per entry -->
+        <max_entry_size_in_rows>30000000</max_entry_size_in_rows>
+    </query_cache>
+
+    <!-- ===================================================================
+         JEMALLOC TUNING
+         Reduces memory fragmentation in long-running analytics workloads.
+         =================================================================== -->
+    <jemalloc>
+        <!-- Background thread runs periodic decay of dirty memory pages -->
+        <background_thread>true</background_thread>
+    </jemalloc>
+
+    <!-- ===================================================================
+         BACKGROUND POOL MEMORY
+         Memory reserved per background merge/mutation thread.
+         =================================================================== -->
+    <background_pool_size>16</background_pool_size>
+    <background_merges_mutations_concurrency_ratio>2</background_merges_mutations_concurrency_ratio>
+
+</clickhouse>
