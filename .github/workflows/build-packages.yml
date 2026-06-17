@@ -1,0 +1,167 @@
+# =============================================================================
+# .github/workflows/build-packages.yml
+# MinervaDB Server for ClickHouse — CI/CD package build pipeline
+#
+# Triggers:
+#   push of a version tag  v*.*.*   (e.g. v24.12.1)
+#   manual workflow_dispatch
+#
+# Jobs:
+#   build-rpm  — builds .rpm on Rocky Linux 9 (RHEL-compatible)
+#   build-deb  — builds .deb on Ubuntu 22.04
+#   release    — attaches packages to GitHub Release
+# =============================================================================
+name: Build Packages
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Package version (e.g. 24.12.1)"
+        required: false
+        default: "24.12.1"
+
+env:
+  PACKAGE_NAME: minervadb-server
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # RPM build — Rocky Linux 9 (RHEL / CentOS / Rocky / AlmaLinux compatible)
+  # ---------------------------------------------------------------------------
+  build-rpm:
+    name: Build RPM (RHEL/CentOS/Rocky)
+    runs-on: ubuntu-latest
+    container:
+      image: rockylinux:9
+
+    steps:
+      - name: Install build tools
+        run: |
+          dnf install -y rpm-build rpmdevtools git findutils coreutils
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            TAG="${GITHUB_REF_NAME#v}"
+            echo "version=${TAG}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build RPM package
+        env:
+          MINERVADB_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          chmod +x packaging/build-packages.sh
+          packaging/build-packages.sh rpm
+
+      - name: Upload RPM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: minervadb-server-rpm
+          path: dist/*.rpm
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # DEB build — Ubuntu 22.04 (Ubuntu / Debian compatible)
+  # ---------------------------------------------------------------------------
+  build-deb:
+    name: Build DEB (Ubuntu/Debian)
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Install build tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y dpkg-dev fakeroot
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            TAG="${GITHUB_REF_NAME#v}"
+            echo "version=${TAG}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build DEB package
+        env:
+          MINERVADB_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          chmod +x packaging/build-packages.sh
+          packaging/build-packages.sh deb
+
+      - name: Upload DEB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: minervadb-server-deb
+          path: dist/*.deb
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Release — attach packages to GitHub Release (tag pushes only)
+  # ---------------------------------------------------------------------------
+  release:
+    name: Attach packages to GitHub Release
+    needs: [build-rpm, build-deb]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, "refs/tags/v")
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download RPM artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: minervadb-server-rpm
+          path: dist/
+
+      - name: Download DEB artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: minervadb-server-deb
+          path: dist/
+
+      - name: Create GitHub Release and upload packages
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.rpm
+            dist/*.deb
+          generate_release_notes: true
+          body: |
+            ## MinervaDB Server for ClickHouse ${{ github.ref_name }}
+            
+            ### Packages
+            | Package | Platform |
+            |---------|----------|
+            | `minervadb-server-*.noarch.rpm` | RHEL / CentOS / Rocky Linux / AlmaLinux |
+            | `minervadb-server_*_all.deb`    | Ubuntu / Debian |
+            
+            ### Quick Install
+            **RHEL / CentOS / Rocky / AlmaLinux:**
+            ```bash
+            sudo rpm -ivh minervadb-server-*.noarch.rpm
+            sudo systemctl restart clickhouse-server
+            ```
+            
+            **Ubuntu / Debian:**
+            ```bash
+            sudo dpkg -i minervadb-server_*_all.deb
+            sudo systemctl restart clickhouse-server
+            ```
