@@ -1,0 +1,56 @@
+#!/bin/sh
+# postinst script for minervadb-server
+# Called by dpkg after the package files have been unpacked.
+set -e
+
+MINERVADB_SRC_DIR="/opt/minervadb-server"
+CLICKHOUSE_CONFIG_DIR="/etc/clickhouse-server"
+
+case "$1" in
+  configure)
+    # Ensure clickhouse group and user exist.
+    if ! getent group clickhouse > /dev/null 2>&1; then
+      addgroup --system clickhouse
+    fi
+    if ! getent passwd clickhouse > /dev/null 2>&1; then
+      adduser --system --ingroup clickhouse --home /var/lib/clickhouse \
+              --no-create-home --shell /usr/sbin/nologin \
+              --gecos "ClickHouse Server" clickhouse
+    fi
+
+    # Set ownership on config overlay files.
+    if [ -d "${CLICKHOUSE_CONFIG_DIR}/config.d" ]; then
+      chown -R clickhouse:clickhouse "${CLICKHOUSE_CONFIG_DIR}/config.d" 2>/dev/null || true
+      chmod 0640 "${CLICKHOUSE_CONFIG_DIR}/config.d"/*.xml 2>/dev/null || true
+    fi
+    if [ -d "${CLICKHOUSE_CONFIG_DIR}/users.d" ]; then
+      chown -R clickhouse:clickhouse "${CLICKHOUSE_CONFIG_DIR}/users.d" 2>/dev/null || true
+      chmod 0640 "${CLICKHOUSE_CONFIG_DIR}/users.d"/*.xml 2>/dev/null || true
+    fi
+
+    echo "=================================================="
+    echo " MinervaDB Server for ClickHouse installed"
+    echo "=================================================="
+    echo ""
+    echo "  Source tree    : ${MINERVADB_SRC_DIR}"
+    echo "  Config overlays:"
+    echo "    ${CLICKHOUSE_CONFIG_DIR}/config.d/"
+    echo "    ${CLICKHOUSE_CONFIG_DIR}/users.d/"
+    echo ""
+    echo "  Restart ClickHouse to activate:"
+    echo "    sudo systemctl restart clickhouse-server"
+    echo ""
+    echo "  Docs: /usr/share/doc/minervadb-server/"
+    echo "=================================================="
+    ;;
+
+  abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+  *)
+    echo "postinst: unexpected argument $1" >&2
+    exit 1
+    ;;
+esac
+
+exit 0
