@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<!--
+  MinervaDB Server for ClickHouse
+  configs/production/config.d/01-storage.xml
+
+  Disk and tiered storage configuration.
+  Covers: local SSD hot tier, S3/GCS/Azure warm/cold tiers,
+          volume policies, and data movement settings.
+-->
+<clickhouse>
+    <!-- ===================================================================
+         DATA AND LOG PATHS
+         =================================================================== -->
+    <path>/var/lib/clickhouse/</path>
+    <tmp_path>/var/lib/clickhouse/tmp/</tmp_path>
+    <user_files_path>/var/lib/clickhouse/user_files/</user_files_path>
+    <format_schema_path>/var/lib/clickhouse/format_schemas/</format_schema_path>
+
+    <!-- ===================================================================
+         DISK DEFINITIONS
+         Add/remove disks to match your infrastructure.
+         =================================================================== -->
+    <storage_configuration>
+        <disks>
+            <!-- Local NVMe SSD (hot tier) -->
+            <hot>
+                <type>local</type>
+                <path>/var/lib/clickhouse/</path>
+                <keep_free_space_bytes>10737418240</keep_free_space_bytes>  <!-- 10 GiB reserve -->
+            </hot>
+
+            <!-- Local HDD (warm tier — optional, comment out if not present) -->
+            <warm>
+                <type>local</type>
+                <path>/data/clickhouse-warm/</path>
+                <keep_free_space_bytes>10737418240</keep_free_space_bytes>
+            </warm>
+
+            <!-- AWS S3 cold tier
+                 Set environment variables or use IAM role for credentials:
+                   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
+                 Or use instance profile (recommended for EC2):
+                   use_environment_credentials=1 -->
+            <s3_cold>
+                <type>s3</type>
+                <endpoint>https://s3.amazonaws.com/YOUR-BUCKET/clickhouse/</endpoint>
+                <access_key_id>YOUR_ACCESS_KEY</access_key_id>
+                <secret_access_key>YOUR_SECRET_KEY</secret_access_key>
+                <!-- For IAM roles, remove the keys above and uncomment: -->
+                <!-- <use_environment_credentials>1</use_environment_credentials> -->
+                <region>us-east-1</region>
+                <server_side_encryption_customer_key_base64></server_side_encryption_customer_key_base64>
+                <cache_enabled>true</cache_enabled>
+                <cache_path>/var/lib/clickhouse/s3_cache/</cache_path>
+                <data_cache_max_size>107374182400</data_cache_max_size>  <!-- 100 GiB local S3 cache -->
+            </s3_cold>
+        </disks>
+
+        <!-- ================================================================
+             STORAGE POLICIES
+             ================================================================ -->
+        <policies>
+            <!-- Hot-only: everything stays on NVMe SSD -->
+            <hot_only>
+                <volumes>
+                    <main>
+                        <disk>hot</disk>
+                    </main>
+                </volumes>
+            </hot_only>
+
+            <!-- Hot → Warm → Cold: automatic tiering by age -->
+            <hot_warm_cold>
+                <volumes>
+                    <hot_volume>
+                        <disk>hot</disk>
+                        <!-- Move data to warm when hot disk is 80% full or data is older than 30 days -->
+                        <max_data_part_size_bytes>10737418240</max_data_part_size_bytes>
+                    </hot_volume>
+                    <warm_volume>
+                        <disk>warm</disk>
+                        <max_data_part_size_bytes>107374182400</max_data_part_size_bytes>
+                    </warm_volume>
+                    <cold_volume>
+                        <disk>s3_cold</disk>
+                        <!-- Data moved here is retained indefinitely -->
+                    </cold_volume>
+                </volumes>
+                <!-- Move parts from hot to warm after 30 days -->
+                <move_factor>0.1</move_factor>
+            </hot_warm_cold>
+
+            <!-- Hot → S3 (no local warm tier) -->
+            <hot_s3>
+                <volumes>
+                    <hot_volume>
+                        <disk>hot</disk>
+                    </hot_volume>
+                    <s3_volume>
+                        <disk>s3_cold</disk>
+                    </s3_volume>
+                </volumes>
+                <move_factor>0.1</move_factor>
+            </hot_s3>
+        </policies>
+    </storage_configuration>
+
+    <!-- ===================================================================
+         BACKGROUND DATA MOVEMENT
+         =================================================================== -->
+    <background_move_pool_size>8</background_move_pool_size>
+
+    <!-- ===================================================================
+         DISTRIBUTED CACHE (ClickHouse 23.7+ SharedMergeTree / Cloud)
+         Uncomment if using ClickHouse Cloud or SharedMergeTree.
+         =================================================================== -->
+    <!-- <distributed_cache_disks>s3_cold</distributed_cache_disks> -->
+
+</clickhouse>
