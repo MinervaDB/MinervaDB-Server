@@ -1,0 +1,23 @@
+#!/bin/sh
+# postrm script for minervadb-server
+# Called by dpkg after the package files have been removed.
+set -e
+
+MINERVADB_SRC_DIR="/opt/minervadb-server"
+
+case "$1" in
+  purge)
+    # On purge (dpkg --purge), remove the source tree.
+    rm -rf "${MINERVADB_SRC_DIR}"
+    ;;
+
+  remove|upgrade|disappear|failed-upgrade|abort-install|abort-upgrade)
+    ;;
+
+  *)
+    echo "postrm: unexpected argument $1" >&2
+    exit 1
+    ;;
+esac
+
+exit 0
