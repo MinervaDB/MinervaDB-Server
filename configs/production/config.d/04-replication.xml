@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<!-- MinervaDB Server: 04-replication.xml - ZooKeeper/Keeper, cluster macros, remote servers -->
+<clickhouse>
+    <macros><cluster>minervadb_cluster</cluster><shard>01</shard><replica>replica-01</replica></macros>
+    <zookeeper>
+        <node><host>keeper1</host><port>9181</port></node>
+        <node><host>keeper2</host><port>9181</port></node>
+        <node><host>keeper3</host><port>9181</port></node>
+        <session_timeout_ms>30000</session_timeout_ms>
+        <operation_timeout_ms>10000</operation_timeout_ms>
+        <root>/clickhouse</root>
+        <identity>clickhouse:CHANGE_ME_KEEPER_SECRET</identity>
+    </zookeeper>
+    <remote_servers>
+        <minervadb_cluster>
+            <secret>CHANGE_ME_CLUSTER_SECRET</secret>
+            <shard>
+                <internal_replication>true</internal_replication>
+                <replica><host>ch-shard1-replica1</host><port>9000</port></replica>
+                <replica><host>ch-shard1-replica2</host><port>9000</port></replica>
+            </shard>
+            <shard>
+                <internal_replication>true</internal_replication>
+                <replica><host>ch-shard2-replica1</host><port>9000</port></replica>
+                <replica><host>ch-shard2-replica2</host><port>9000</port></replica>
+            </shard>
+        </minervadb_cluster>
+        <minervadb_ha>
+            <secret>CHANGE_ME_CLUSTER_SECRET</secret>
+            <shard>
+                <internal_replication>true</internal_replication>
+                <replica><host>ch-node1</host><port>9000</port></replica>
+                <replica><host>ch-node2</host><port>9000</port></replica>
+            </shard>
+        </minervadb_ha>
+    </remote_servers>
+    <background_fetches_pool_size>8</background_fetches_pool_size>
+</clickhouse>
