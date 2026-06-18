@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<!-- MinervaDB Server: 01-readonly.xml - Read-only user profile -->
+<clickhouse>
+    <profiles>
+        <readonly>
+            <readonly>1</readonly>
+            <max_memory_usage>5368709120</max_memory_usage>
+            <max_threads>4</max_threads>
+            <max_execution_time>120</max_execution_time>
+            <max_rows_to_read>1000000000</max_rows_to_read>
+            <read_overflow_mode>throw</read_overflow_mode>
+            <max_result_rows>1000000</max_result_rows>
+            <result_overflow_mode>break</result_overflow_mode>
+            <allow_ddl>0</allow_ddl>
+        </readonly>
+    </profiles>
+
+    <users>
+        <readonly>
+            <password_sha256_hex>CHANGE_ME_SHA256_HASH</password_sha256_hex>
+            <networks>
+                <ip>::/0</ip>
+            </networks>
+            <profile>readonly</profile>
+            <quota>default</quota>
+            <databases>
+                <database>default</database>
+            </databases>
+        </readonly>
+    </users>
+</clickhouse>
