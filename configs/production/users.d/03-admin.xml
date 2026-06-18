@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<!-- MinervaDB Server: 03-admin.xml - Administrative user with full access -->
+<clickhouse>
+    <profiles>
+        <admin_profile>
+            <max_memory_usage>0</max_memory_usage>
+            <max_threads>0</max_threads>
+            <max_execution_time>0</max_execution_time>
+            <allow_ddl>1</allow_ddl>
+            <allow_introspection_functions>1</allow_introspection_functions>
+            <access_management>1</access_management>
+        </admin_profile>
+    </profiles>
+
+    <users>
+        <minervadb_admin>
+            <password_sha256_hex>CHANGE_ME_SHA256_HASH</password_sha256_hex>
+            <networks>
+                <ip>127.0.0.1</ip>
+                <ip>::1</ip>
+            </networks>
+            <profile>admin_profile</profile>
+            <quota>default</quota>
+            <access_management>1</access_management>
+            <named_collection_control>1</named_collection_control>
+            <show_named_collections>1</show_named_collections>
+            <show_named_collections_secrets>1</show_named_collections_secrets>
+        </minervadb_admin>
+    </users>
+
+    <quotas>
+        <default>
+            <interval>
+                <duration>3600</duration>
+                <queries>0</queries>
+                <query_selects>0</query_selects>
+                <query_inserts>0</query_inserts>
+                <errors>0</errors>
+                <result_rows>0</result_rows>
+                <read_rows>0</read_rows>
+                <execution_time>0</execution_time>
+            </interval>
+        </default>
+    </quotas>
+</clickhouse>
