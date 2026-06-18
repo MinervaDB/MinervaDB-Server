@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<!-- MinervaDB Server: 05-mergetree.xml - MergeTree storage engine settings -->
+<clickhouse>
+    <merge_tree>
+        <!-- Minimum number of data parts before merge -->
+        <min_rows_for_wide_part>512000</min_rows_for_wide_part>
+        <min_bytes_for_wide_part>10485760</min_bytes_for_wide_part>
+
+        <!-- Background operations -->
+        <number_of_free_entries_in_pool_to_lower_max_size_of_merge>8</number_of_free_entries_in_pool_to_lower_max_size_of_merge>
+        <max_bytes_to_merge_at_max_space_in_pool>161061273600</max_bytes_to_merge_at_max_space_in_pool>
+        <max_bytes_to_merge_at_min_space_in_pool>1048576</max_bytes_to_merge_at_min_space_in_pool>
+
+        <!-- TTL settings -->
+        <merge_with_ttl_timeout>86400</merge_with_ttl_timeout>
+        <merge_with_recompression_ttl_timeout>14400</merge_with_recompression_ttl_timeout>
+        <max_replicated_merges_with_ttl_allowed>1</max_replicated_merges_with_ttl_allowed>
+
+        <!-- Mutation settings -->
+        <number_of_mutations_to_delay>0</number_of_mutations_to_delay>
+        <number_of_mutations_to_throw>0</number_of_mutations_to_throw>
+
+        <!-- Parts cleanup -->
+        <old_parts_lifetime>480</old_parts_lifetime>
+        <max_delay_to_insert>1</max_delay_to_insert>
+        <min_relative_delay_to_close_streams>0.05</min_relative_delay_to_close_streams>
+
+        <!-- Index settings -->
+        <index_granularity>8192</index_granularity>
+        <index_granularity_bytes>10485760</index_granularity_bytes>
+        <min_index_granularity_bytes>1024</min_index_granularity_bytes>
+        <use_minimalistic_part_header_in_zookeeper>1</use_minimalistic_part_header_in_zookeeper>
+
+        <!-- Data caching -->
+        <storage_policy>tiered_storage</storage_policy>
+        <min_bytes_for_full_part_storage>0</min_bytes_for_full_part_storage>
+
+        <!-- Deduplication -->
+        <replicated_deduplication_window>100</replicated_deduplication_window>
+        <replicated_deduplication_window_seconds>604800</replicated_deduplication_window_seconds>
+        <non_replicated_deduplication_window>0</non_replicated_deduplication_window>
+
+        <!-- Write-Ahead Log -->
+        <min_rows_for_compact_part>0</min_rows_for_compact_part>
+        <min_bytes_for_compact_part>0</min_bytes_for_compact_part>
+        <write_ahead_log_max_bytes>1073741824</write_ahead_log_max_bytes>
+        <in_memory_parts_enable_wal>1</in_memory_parts_enable_wal>
+
+        <!-- Checksums -->
+        <check_sample_factor>0</check_sample_factor>
+        <max_suspicious_broken_parts>10</max_suspicious_broken_parts>
+    </merge_tree>
+</clickhouse>
