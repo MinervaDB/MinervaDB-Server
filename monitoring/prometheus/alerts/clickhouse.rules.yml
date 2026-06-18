@@ -1,0 +1,87 @@
+# MinervaDB Server: clickhouse.rules.yml
+# Prometheus alerting rules for ClickHouse
+
+groups:
+  - name: clickhouse_availability
+    interval: 30s
+    rules:
+      - alert: ClickHouseDown
+        expr: up{job="clickhouse"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ClickHouse instance down"
+          description: "ClickHouse {{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: ClickHouseReplicationError
+        expr: ClickHouseMetrics_ReplicaPartialShutdown > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ClickHouse replication error"
+          description: "ClickHouse {{ $labels.instance }} has replication errors."
+
+  - name: clickhouse_performance
+    interval: 60s
+    rules:
+      - alert: ClickHouseHighMemoryUsage
+        expr: ClickHouseMetrics_MemoryTracking / on(instance) ClickHouseAsyncMetrics_OSMemoryTotal > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ClickHouse high memory usage"
+          description: "Memory usage on {{ $labels.instance }} is above 90%."
+
+      - alert: ClickHouseSlowQueries
+        expr: rate(ClickHouseProfileEvents_QueryTimeMicroseconds[5m]) / rate(ClickHouseProfileEvents_Query[5m]) > 10000000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ClickHouse slow average query time"
+          description: "Average query time on {{ $labels.instance }} exceeds 10 seconds."
+
+      - alert: ClickHouseManyMerges
+        expr: ClickHouseMetrics_Merge > 100
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ClickHouse high merge queue"
+          description: "{{ $labels.instance }} has more than 100 active merges."
+
+  - name: clickhouse_storage
+    interval: 120s
+    rules:
+      - alert: ClickHouseDiskSpaceLow
+        expr: ClickHouseAsyncMetrics_DiskAvailable_default / ClickHouseAsyncMetrics_DiskTotal_default < 0.15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ClickHouse low disk space"
+          description: "Disk space on {{ $labels.instance }} is below 15%."
+
+      - alert: ClickHouseDiskSpaceCritical
+        expr: ClickHouseAsyncMetrics_DiskAvailable_default / ClickHouseAsyncMetrics_DiskTotal_default < 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ClickHouse critical disk space"
+          description: "Disk space on {{ $labels.instance }} is below 5%."
+
+  - name: clickhouse_replication
+    interval: 60s
+    rules:
+      - alert: ClickHouseReplicationLag
+        expr: ClickHouseAsyncMetrics_ReplicaMaxAbsoluteDelay > 300
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ClickHouse replication lag"
+          description: "Replication lag on {{ $labels.instance }} is over 5 minutes."
